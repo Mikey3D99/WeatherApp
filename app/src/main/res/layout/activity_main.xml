@@ -13,7 +13,9 @@
         android:layout_height="0dp"
         android:layout_alignParentTop="true"
         android:layout_above="@id/bottomNavigationView"
-        android:background="@color/purple_500" >
+        android:background="@color/white" >
+
+
 
         <fragment
             android:id="@+id/fragment"
@@ -23,6 +25,9 @@
             app:defaultNavHost="true"
             app:navGraph="@navigation/my_nav"
             tools:ignore="FragmentTagUsage" />
+
+
+
     </FrameLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
