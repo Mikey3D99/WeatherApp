@@ -1,13 +1,18 @@
 package com.example.weatherapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 import androidx.viewpager.widget.ViewPager;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -18,6 +23,7 @@ import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,76 +33,49 @@ import java.text.DecimalFormat;
 
 public class MainActivity extends AppCompatActivity {
 
-    EditText searchCity;
-    TextView result;
-    TextView location;
-
-    private final String url = "https://api.openweathermap.org/data/2.5/weather";
-    private final String key = "ddad710ec049bf1fc59002002f69963d";
-    DecimalFormat decimalFormat = new DecimalFormat("#.#");
-    View myView;
+    MainWeatherFragment main = new MainWeatherFragment();
+    AdditionalInfoFragment additional = new AdditionalInfoFragment();
+    MySettingsFragment settings = new MySettingsFragment();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        searchCity = findViewById(R.id.search_bar);
-        result = findViewById(R.id.result);
-        location = findViewById(R.id.location);
-
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        NavController navController = Navigation.findNavController(this,  R.id.fragment);
-        NavigationUI.setupWithNavController(bottomNavigationView, navController);
+        getSupportFragmentManager().beginTransaction().replace(R.id.body_container, main).commit();
+        bottomNavigationView.setSelectedItemId(R.id.my_nav);
+
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+
+            switch(item.getItemId()){
+                case R.id.mainWeatherFragment:
+                    getSupportFragmentManager().beginTransaction().replace(R.id.body_container,main).commit();
+                    break;
+                case R.id.additionalInfoFragment:
+                    getSupportFragmentManager().beginTransaction().replace(R.id.body_container,additional).commit();
+                    break;
+                case R.id.mySettingsFragment:
+                    getSupportFragmentManager().beginTransaction().replace(R.id.body_container,settings).commit();
+                    break;
+            }
+            return true;
+        });
+
+
+        //NavController navController = Navigation.findNavController(this,  R.id.fragment);
+       // NavigationUI.setupWithNavController(bottomNavigationView, navController);
+
+        /*FragmentManager fragmentManager = getSupportFragmentManager();
+        Fragment main = fragmentManager.findFragmentByTag("MainWeatherFragment");
+        Fragment additional = fragmentManager.findFragmentByTag("AdditionalInfoFragment");
+        Fragment.SavedState mainSaved = fragmentManager.saveFragmentInstanceState(main);
+        Fragment.SavedState additionalSaved = fragmentManager.saveFragmentInstanceState(additional);
+
+        main.setInitialSavedState(mainSaved);
+        additional.setInitialSavedState(additionalSaved);*/
+
     }
 
-    public void getWeatherDetails(View view) {
-        String tempUrl = "";
-        String city = searchCity.getText().toString().trim();
-        if (city.equals(""))
-            result.setText("City field cannot be empty!");
-
-        //complete a url with a city
-        tempUrl = url + "?q=" + city + "&appid=" + key;
-        StringRequest stringRequest = new StringRequest
-                (Request.Method.POST, tempUrl, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        String output = "";
-                        try{
-                            JSONObject jsonResponse = new JSONObject(response);
-                            JSONArray jsonArray = jsonResponse.getJSONArray("weather");
-                            JSONObject jsonObjectWeather = jsonArray.getJSONObject(0);
-                            String description = jsonObjectWeather.getString("description");
-                            JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
-
-                            double temperatureCelcius = jsonObjectMain.getDouble("temp") - 273.15;
-                            float pressure = jsonObjectMain.getInt("pressure");
-                            int humidity = jsonObjectMain.getInt("humidity");
-
-                            JSONObject jsonObjectWind = jsonResponse.getJSONObject("wind");
-                            String wind = jsonObjectWind.getString("speed");
-                            JSONObject jsonObjectClouds = jsonResponse.getJSONObject("clouds");
-                            String clouds = jsonObjectClouds.getString("all");
-                            JSONObject jsonObjectSys = jsonResponse.getJSONObject("sys");
-                            String countryName = jsonObjectSys.getString("country");
-                            String cityName = jsonResponse.getString("name");
-
-                            //putting retrieved data into textViews
-                            String temperature = decimalFormat.format(temperatureCelcius) + "°C";
-                            result.setText(temperature);
-                            location.setText(cityName);
-
-
-
-                        }catch (JSONException e){
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                        error -> result.setText(error.toString().trim()));
-
-        RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
-        requestQueue.add(stringRequest);
-    }
 }

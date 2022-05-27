@@ -16,11 +16,6 @@
         android:label="fragment_additional_info"
         tools:layout="@layout/fragment_additional_info" />
     <fragment
-        android:id="@+id/aboutFragment"
-        android:name="com.example.weatherapp.AboutFragment"
-        android:label="fragment_about"
-        tools:layout="@layout/fragment_about" />
-    <fragment
         android:id="@+id/mySettingsFragment"
         android:name="com.example.weatherapp.MySettingsFragment"
         android:label="fragment_my_settings"
