@@ -26,4 +26,11 @@
     <string name="updated_at">updated at</string>
     <string name="temperature">Temperature</string>
     <string name="sky">sky</string>
+    <string name="add_to_favourites">add to favourites</string>
+    <string name="search_save"><![CDATA[search & save]]></string>
+    <string name="country">Country</string>
+    <string name="wind">wind</string>
+    <string name="humidity">humidity</string>
+    <string name="pressure">pressure</string>
+    <string name="location_error">Location does not exist!</string>
 </resources>

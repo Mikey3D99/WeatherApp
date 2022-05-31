@@ -19,25 +19,49 @@
         android:text="@string/location"  />
 
     <TextView
-        android:id="@+id/sky"
+        android:id="@+id/country"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="100dp"
-        android:fontFamily="sans-serif-thin"
-        android:text="@string/sky"
+        android:text="@string/country"
         android:textAlignment="center"
+
         android:textColor="@color/white"
-        android:textSize="30sp"/>
+        android:textSize="15sp"/>
 
     <TextView
-        android:id="@+id/result"
+        android:id="@+id/wind"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="70dp"
+        android:fontFamily="sans-serif-thin"
+        android:text="@string/wind"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="50sp"/>
+
+    <TextView
+        android:id="@+id/humidity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-thin"
-        android:text="@string/temperature"
+        android:text="@string/humidity"
+        android:paddingTop="30dp"
         android:textAlignment="center"
         android:textColor="@color/white"
-        android:textSize="60sp" />
+        android:textSize="50sp" />
+
+    <TextView
+        android:id="@+id/pressure"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-thin"
+        android:paddingTop="30dp"
+        android:text="@string/pressure"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="50sp" />
+
+
 
 
 </LinearLayout>

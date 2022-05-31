@@ -20,7 +20,8 @@
         android:backgroundTint="@color/white"
         android:hint="@string/enter_city_name"
         android:inputType="textPostalAddress"
-        android:textColorHint="#757575" />
+        android:textColorHint="#757575"
+        android:textColor="@color/white"/>
 
     <Button
         android:id="@+id/btnGet"
@@ -28,8 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
         android:background="@color/white"
-        android:onClick="getWeatherDetails"
-        android:text="@string/search" />
+        android:text="@string/search_save" />
 
     <TextView
         android:id="@+id/location"

@@ -2,11 +2,13 @@ package com.example.weatherapp;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
@@ -20,7 +22,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Locale;
 import java.util.Objects;
 
 
@@ -30,22 +37,22 @@ public class MainWeatherFragment extends Fragment {
     TextView location;
     TextView sky;
 
-
-    private final String url = "https://api.openweathermap.org/data/2.5/weather";
-    private final String key = "ddad710ec049bf1fc59002002f69963d";
-    private String units = "metric";
     DecimalFormat decimalFormat = new DecimalFormat("#.#");
-    String cityName;
     View view;
+
+    //weather parameters for this fragment
+    double temperatureCelsius;
+    String temperature;
+    String description;
+    String cityName;
+    String country;
 
 
     @Override
     public void onStart(){
         super.onStart();
-        if(searchCity != null && !searchCity.getText().toString().isEmpty()){
-            System.out.println(searchCity.getText().toString());
-            cityName = searchCity.getText().toString();
-            getWeatherDetails(view);
+        if(description!=null && cityName!=null && temperature!=null){
+            setWeatherDetails();
         }
     }
 
@@ -61,80 +68,130 @@ public class MainWeatherFragment extends Fragment {
         sky = view.findViewById(R.id.sky);
 
 
+        try {
+            getWeatherFromJSON(readFromFile("current"));
 
+        } catch (IOException e) {
+            Toast.makeText(requireActivity().getApplicationContext(),
+                    "None locations are saved yet!",
+                    Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
 
-        int idView = getResources().getIdentifier("btnGet", "id", getContext().getPackageName());
+        // search button
+        int idView = getResources().getIdentifier("btnGet", "id", requireContext().getPackageName());
         View buttonView = view.findViewById(idView);
-        buttonView.setOnClickListener(this::getWeatherDetails);
+        buttonView.setOnClickListener(view1 -> {
+            try {
+                getWeatherDetails(view1);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println(" File crash");
+            }
+        });
+
 
         return view;
     }
 
-    /*@Override
-    public void onCreate(Bundle savedInstanceState){
-        super.onCreate(savedInstanceState);
-        if(savedInstanceState != null)
-            searchCity.setText(savedInstanceState.getString("searchCity"));
+
+    public void writeToFile(String fileName, String content) throws IOException{
+        File path = requireActivity().getApplicationContext().getFilesDir();
+        FileOutputStream writer = new FileOutputStream(new File(path, fileName));
+        writer.write(content.getBytes());
+        writer.close();
+        Toast.makeText(requireActivity().getApplicationContext(),
+                "Location Saved",
+                Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState){
-        outState.putString("searchCity", searchCity.getText().toString());
-        outState.putString("temp", result.getText().toString());
-        super.onSaveInstanceState(outState);
-    }*/
+    public String readFromFile(String fileName) throws IOException {
+        File path = requireActivity().getApplicationContext().getFilesDir();
+        File readFrom = new File(path, fileName);
+        FileInputStream stream = new FileInputStream(readFrom);
+        byte[] content = new byte[(int)readFrom.length()];
+        stream.read(content);
+        return new String(content);
+    }
 
-    @SuppressLint("SetTextI18n")
-    public void getWeatherDetails(View view) {
-        String tempUrl = "";
-        String city = searchCity.getText().toString().trim();
-        if (city.equals(""))
-            result.setText("City field cannot be empty!");
+    public void downloadWeatherData(View view){
+
+        cityName = searchCity.getText().toString().trim();
+        String url = "https://api.openweathermap.org/data/2.5/weather";
+        String key = "ddad710ec049bf1fc59002002f69963d";
+        String units = "metric";
+        String tempUrl = url + "?q=" + cityName + "&appid=" + key + "&units=" + units;
 
         //complete a url with a city
-        tempUrl = url + "?q=" + city + "&appid=" + key + "&units=" + units;
         StringRequest stringRequest = new StringRequest
-                (Request.Method.POST, tempUrl, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        String output = "";
-                        try{
-                            JSONObject jsonResponse = new JSONObject(response);
-                            JSONArray jsonArray = jsonResponse.getJSONArray("weather");
-                            JSONObject jsonObjectWeather = jsonArray.getJSONObject(0);
-                            String description = jsonObjectWeather.getString("description");
-                            JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
+                (Request.Method.POST, tempUrl, response -> {
+                    try{
+                        writeToFile(cityName.toLowerCase(Locale.ROOT), response);
+                        writeToFile("current", response);
+                        getWeatherFromJSON(response);
 
-                            double temperatureCelcius = jsonObjectMain.getDouble("temp");
-                            float pressure = jsonObjectMain.getInt("pressure");
-                            int humidity = jsonObjectMain.getInt("humidity");
-
-                            JSONObject jsonObjectWind = jsonResponse.getJSONObject("wind");
-                            String wind = jsonObjectWind.getString("speed");
-                            JSONObject jsonObjectClouds = jsonResponse.getJSONObject("clouds");
-                            String clouds = jsonObjectClouds.getString("all");
-                            JSONObject jsonObjectSys = jsonResponse.getJSONObject("sys");
-                            String countryName = jsonObjectSys.getString("country");
-                            String cityName = jsonResponse.getString("name");
-
-                            //putting retrieved data into textViews
-                            String temperature = decimalFormat.format(temperatureCelcius) + "°C";
-
-                            result.setText(temperature);
-                            location.setText(cityName);
-                            sky.setText(description);
-
-
-
-                        }catch (JSONException e){
-                            e.printStackTrace();
-                        }
+                    }catch (IOException e){
+                        e.printStackTrace();
                     }
                 },
-                        error -> result.setText("Location does not exist!"));
+                        error -> result.setText(R.string.location_error));
 
         RequestQueue requestQueue = Volley.newRequestQueue(requireActivity().getApplicationContext());
         requestQueue.add(stringRequest);
     }
 
+
+    private void setWeatherDetails(){
+        result.setText(temperature);
+        location.setText(cityName);
+        sky.setText(description);
+    }
+
+    private void getWeatherFromJSON(String jsonString) throws IOException{
+        try {
+
+            JSONObject jsonResponse = new JSONObject(jsonString);
+
+            JSONArray jsonArray = jsonResponse.getJSONArray("weather");
+            JSONObject jsonObjectWeather = jsonArray.getJSONObject(0);
+
+            description = jsonObjectWeather.getString("description");
+            JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
+
+            temperatureCelsius = jsonObjectMain.getDouble("temp");
+
+            JSONObject jsonObjectSys = jsonResponse.getJSONObject("sys");
+            country = jsonObjectSys.getString("country");
+
+            //if(!temp.contains("Voivodeship") || cityName == null)
+            cityName = jsonResponse.getString("name");
+
+            //putting retrieved data into textViews
+            temperature = decimalFormat.format(temperatureCelsius) + "°C";
+            setWeatherDetails();
+
+        }
+        catch(JSONException e){
+            e.printStackTrace();
+            System.out.println("Something wrong with json");
+        }
+    }
+
+    private void showAllFiles(){
+        File path = requireActivity().getApplicationContext().getFilesDir();
+        File [] all = path.listFiles();
+        assert all != null;
+        for(File x: all) {
+            System.out.println(x.getName());
+            System.out.println(x.getParent());
+        }
+
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void getWeatherDetails(View view)throws IOException{
+        //showAllFiles();
+        downloadWeatherData(view);
+        getWeatherFromJSON(readFromFile("current"));
+    }
 }
