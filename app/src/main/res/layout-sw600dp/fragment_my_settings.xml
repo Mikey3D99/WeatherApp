@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/gradient_bg"
+    tools:context=".MySettingsFragment">
+
+        <TextView
+            android:id="@+id/FAVS"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="20dp"
+            android:fontFamily="sans-serif-thin"
+            android:text="@string/favourite_locations"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textSize="50sp"/>
+
+        <ScrollView
+            android:id="@+id/favList"
+            android:layout_width="match_parent"
+            android:layout_height="1412dp"
+            android:layout_marginStart="90dp"
+            android:layout_marginTop="200dp">
+
+        </ScrollView>
+
+</FrameLayout>
