@@ -1,8 +1,10 @@
 package com.example.weatherapp;
-
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,11 +12,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -26,9 +28,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.util.Locale;
-import java.util.Objects;
 
 
 public class MainWeatherFragment extends Fragment {
@@ -42,10 +44,13 @@ public class MainWeatherFragment extends Fragment {
 
     //weather parameters for this fragment
     double temperatureCelsius;
+    double temperatureFahrenheit;
+    String units = "metric";
     String temperature;
     String description;
     String cityName;
     String country;
+    boolean internet;
 
 
     @Override
@@ -67,6 +72,12 @@ public class MainWeatherFragment extends Fragment {
         location = view.findViewById(R.id.location);
         sky = view.findViewById(R.id.sky);
 
+        if(!isNetworkAvailable(requireContext().getApplicationContext())){
+            Toast.makeText(requireActivity().getApplicationContext(),
+                    "NO INTERNET CONNECTION!",
+                    Toast.LENGTH_SHORT).show();
+        }
+
 
         try {
             getWeatherFromJSON(readFromFile("current"));
@@ -83,7 +94,7 @@ public class MainWeatherFragment extends Fragment {
         View buttonView = view.findViewById(idView);
         buttonView.setOnClickListener(view1 -> {
             try {
-                getWeatherDetails(view1);
+                getWeatherDetails();
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(" File crash");
@@ -91,7 +102,54 @@ public class MainWeatherFragment extends Fragment {
         });
 
 
+        // refresh button
+        int refreshID = getResources().getIdentifier("btnRefresh", "id", requireContext().getPackageName());
+        View refreshButtonView = view.findViewById(refreshID);
+        refreshButtonView.setOnClickListener(this::refreshButton);
+
+        // switch units button
+        int unitID = getResources().getIdentifier("switchButton", "id", requireContext().getPackageName());
+        View unitButtonView = view.findViewById(unitID);
+        unitButtonView.setOnClickListener(this::unitButton);
+
+
         return view;
+    }
+
+
+    public boolean isNetworkAvailable(Context context) {
+        ConnectivityManager connectivityManager = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
+        return connectivityManager.getActiveNetworkInfo() != null && connectivityManager.getActiveNetworkInfo().isConnected();
+    }
+
+    public boolean isInternetAvailable() {
+        try {
+            InetAddress ipAddr = InetAddress.getByName("google.com");
+            return !ipAddr.equals("");
+
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+    public void unitButton(View view){
+
+        if(this.units.equals("metric"))
+            this.units = "imperial";
+        else if(this.units.equals("imperial"))
+            this.units = "metric";
+
+        try {
+            getWeatherFromJSON(readFromFile("current"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void refreshButton(View view){
+        downloadWeatherData(true);
     }
 
 
@@ -100,9 +158,6 @@ public class MainWeatherFragment extends Fragment {
         FileOutputStream writer = new FileOutputStream(new File(path, fileName));
         writer.write(content.getBytes());
         writer.close();
-        Toast.makeText(requireActivity().getApplicationContext(),
-                "Location Saved",
-                Toast.LENGTH_SHORT).show();
     }
 
     public String readFromFile(String fileName) throws IOException {
@@ -114,9 +169,10 @@ public class MainWeatherFragment extends Fragment {
         return new String(content);
     }
 
-    public void downloadWeatherData(View view){
+    public void downloadWeatherData(boolean isRefresh){
 
-        cityName = searchCity.getText().toString().trim();
+        if(!isRefresh)
+            cityName = searchCity.getText().toString().trim();
         String url = "https://api.openweathermap.org/data/2.5/weather";
         String key = "ddad710ec049bf1fc59002002f69963d";
         String units = "metric";
@@ -126,11 +182,19 @@ public class MainWeatherFragment extends Fragment {
         StringRequest stringRequest = new StringRequest
                 (Request.Method.POST, tempUrl, response -> {
                     try{
+
+                        JSONObject jsonResponse = new JSONObject(response);
+                        cityName = jsonResponse.getString("name");
+
+
                         writeToFile(cityName.toLowerCase(Locale.ROOT), response);
                         writeToFile("current", response);
                         getWeatherFromJSON(response);
+                        Toast.makeText(requireActivity().getApplicationContext(),
+                                "Location Saved",
+                                Toast.LENGTH_SHORT).show();
 
-                    }catch (IOException e){
+                    }catch (IOException | JSONException e){
                         e.printStackTrace();
                     }
                 },
@@ -159,6 +223,7 @@ public class MainWeatherFragment extends Fragment {
             JSONObject jsonObjectMain = jsonResponse.getJSONObject("main");
 
             temperatureCelsius = jsonObjectMain.getDouble("temp");
+            temperatureFahrenheit = this.temperatureCelsius * 1.8 + 32;
 
             JSONObject jsonObjectSys = jsonResponse.getJSONObject("sys");
             country = jsonObjectSys.getString("country");
@@ -167,7 +232,11 @@ public class MainWeatherFragment extends Fragment {
             cityName = jsonResponse.getString("name");
 
             //putting retrieved data into textViews
-            temperature = decimalFormat.format(temperatureCelsius) + "°C";
+            if(this.units.equals("metric"))
+                temperature = decimalFormat.format(temperatureCelsius) + "°C";
+            else if(this.units.equals("imperial"))
+                temperature = decimalFormat.format(temperatureFahrenheit) + "F";
+
             setWeatherDetails();
 
         }
@@ -189,9 +258,9 @@ public class MainWeatherFragment extends Fragment {
     }
 
     @SuppressLint("SetTextI18n")
-    public void getWeatherDetails(View view)throws IOException{
+    public void getWeatherDetails()throws IOException{
         //showAllFiles();
-        downloadWeatherData(view);
+        downloadWeatherData(false);
         getWeatherFromJSON(readFromFile("current"));
     }
 }

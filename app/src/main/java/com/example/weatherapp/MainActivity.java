@@ -3,6 +3,7 @@ package com.example.weatherapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -16,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -29,9 +31,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.text.DecimalFormat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends FragmentActivity {
 
     MainWeatherFragment main = new MainWeatherFragment();
     AdditionalInfoFragment additional = new AdditionalInfoFragment();
@@ -39,29 +44,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        showInfoAboutOldData();
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-        getSupportFragmentManager().beginTransaction().replace(R.id.body_container, main).commit();
-        bottomNavigationView.setSelectedItemId(R.id.my_nav);
-
-
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-
-            switch(item.getItemId()){
-                case R.id.mainWeatherFragment:
-                    getSupportFragmentManager().beginTransaction().replace(R.id.body_container,main).commit();
-                    break;
-                case R.id.additionalInfoFragment:
-                    getSupportFragmentManager().beginTransaction().replace(R.id.body_container,additional).commit();
-                    break;
-                case R.id.mySettingsFragment:
-                    getSupportFragmentManager().beginTransaction().replace(R.id.body_container,settings).commit();
-                    break;
-            }
-            return true;
-        });
+        NavController navController = Navigation.findNavController(this,  R.id.fragment);
+        NavigationUI.setupWithNavController(bottomNavigationView, navController);
 
 
         //NavController navController = Navigation.findNavController(this,  R.id.fragment);
@@ -76,6 +67,29 @@ public class MainActivity extends AppCompatActivity {
         main.setInitialSavedState(mainSaved);
         additional.setInitialSavedState(additionalSaved);*/
 
+    }
+
+    public void showInfoAboutOldData(){
+        String test = null;
+        try {
+            test = readFromFile("current");
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        if (test != null){
+            Toast.makeText(getApplicationContext(),
+                    "Saved data loaded - click refresh to get new data!",
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String readFromFile(String fileName) throws IOException {
+        File path = getApplicationContext().getFilesDir();
+        File readFrom = new File(path, fileName);
+        FileInputStream stream = new FileInputStream(readFrom);
+        byte[] content = new byte[(int)readFrom.length()];
+        stream.read(content);
+        return new String(content);
     }
 
 }

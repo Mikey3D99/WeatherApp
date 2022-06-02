@@ -33,4 +33,12 @@
     <string name="humidity">humidity</string>
     <string name="pressure">pressure</string>
     <string name="location_error">Location does not exist!</string>
+    <string name="refresh_all_locations">Refresh all locations</string>
+    <string name="change_all_to_celsius">Change all to celsius</string>
+    <string name="change_all_to_fahrenheit">change all to fahrenheit</string>
+    <string name="refresh">refresh</string>
+    <string name="favourite_locations">Favourite Locations</string>
+    <string name="humidity_land">humidity:</string>
+    <string name="wind_land">wind:</string>
+    <string name="pressure_land">pressure:</string>
 </resources>
